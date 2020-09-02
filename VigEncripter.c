@@ -119,7 +119,7 @@ int ajusta(char *texto, int pos, int fix){
 void escreve(char *senha)
 {
 	char texto[65536];
-	int posicao=0, fix;
+	int posicao=0, fix=0;
 
 	// pega texto
 	// combina texto e senha
@@ -307,7 +307,7 @@ void salva(char *texto){
 
 	FILE *arq;
 	arq = fopen(NOMEARQ, "a");
-	int posicao;
+	int posicao = 0;
 
 	do{
 		fwrite(&texto[posicao],sizeof(char),1,arq);				  // escreve no arquivo
@@ -326,15 +326,17 @@ return(i);
 
 void pergsalva(char *texto) {
 
-	char modo;
+	char modo = '\0';
 
 	while (modo == '\0')
 	{
 		printf("\nsalvar?(S/N) ");
 		modo = pegachar();
 		printf("\n");
-		if (modo == 'S'||modo == 's')
+		if (modo == 'S'||modo == 's'){
+			printf("\nSalvando...\n");
 			salva(texto);
+			}
 		else if (!(modo == 'n' || modo== 'N')) modo = '\0';
 	}
 }
