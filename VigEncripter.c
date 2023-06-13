@@ -3,10 +3,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
+#include <conio.h>
 /*
 debugar em relacao a ausencia de texto
 */
+
+enum enumeracao{
+	NEXT_PAGE,
+	PREVIOUS_PAGE
+};
 
 
 char pegachar(); //correção do getchar
@@ -21,73 +26,183 @@ void salva(char *);
 int formata(char *,int); //pula algumas linhas no arquivo
 int calcdata(char*,int); //imprime a data na posicao indicada
 int ajusta(char*,int,int); //ajusta texto dado tamanho da senha
-int tamanhostr(char *);  
 void pergsalva(char *); //pergunta e salva
 
-int main()
-{
+int main() {
 	char senha[256], modo = '\0';
 	printf("Senha: ");
 	pegastr(senha);
 	printf("\n\n");
 	learq(senha);
-	printf("\n\n\nDeseja escrever? (S/N) \n->");
+	printf("Deseja escrever? (S/N) \n->");
 	modo = pegachar();		
-	if (modo=='s'|| modo=='S') {system("cls"); printf("-> "); escreve(senha);} //limpa tela, desenha seta e chama escreve, se modo é s
+	if (modo=='s'|| modo=='S') {system("cls"); printf("-> "); escreve(senha);}
 	printf("\n\n");
-	return (0);
+	return 0;
 }
 
 
 
-char pegachar()
-{
+char pegachar() {
 	char a;
-	do
-	{
+	do {
 		a = getchar();
 		fflush(stdin); // limpa buffer
-	}
-	while (a == '\n' || a == '\0');
+	} while (a == '\n' || a == '\0');
+	
 	return (a);
 }
 
-int pegastr(char *string)
-{
-	do
-	{
-		scanf("%[^\n]", string); // pega string até chegar o \n
-		fflush(stdin); // limpa buffer
-	}
-	while (string[0] == '\n' || string[0] == '\0');
+int pegastr(char *string){
+	scanf("%[^\n]", string); // pega string até chegar o \n
+	fflush(stdin); // limpa buffer
+	return(strlen(string));
+}
 
-return(tamanhostr(string));
+char* decodeFile(FILE *file, char*senha){
+	int i=0, poscharsen=0, fileSize, valid;
+	char c;
+	char* decoded;
+	
+	fseek(file, 0L, SEEK_END);
+	fileSize = ftell(file) + 1;
+	rewind(file);
+	decoded = (char *) malloc(sizeof(char)*fileSize + 1);
+	int tamanhosenha = strlen(senha);
+
+	for (i=0; i<fileSize; i++){
+		poscharsen = i%tamanhosenha;
+		valid = fscanf(file, "%c", &c);
+		if(valid){
+			decoded[i] = (somachar(c,senha[poscharsen],'+'));
+		}
+		else{
+			printf("Erro de leitura\n");
+			rewind(file);
+			return -1;
+		}
+	}
+	decoded[i]='\0';
+	rewind(file);
+	return decoded;
+}
+
+int findPage(char *decoded, int start, int flag){
+	int cursor = 0, prevCursor = 0; 
+	decoded += start;
+	
+	if (flag==NEXT_PAGE) {
+		while(decoded[cursor]=='\n' || decoded[cursor] == ' ') cursor++;
+	}
+	else {
+		while(decoded[cursor]=='\n' || decoded[cursor] == ' ') cursor--;
+		if(decoded[cursor]=='\0') cursor--; //para entrar no loop
+	}	
+	while(decoded[cursor]!='\0'){
+		if (flag == NEXT_PAGE) {
+			cursor++; if (decoded[cursor] == '\0') break;
+			if (decoded[cursor] == '\n'){
+				cursor++; if (decoded[cursor] == '\0') break;
+				while(decoded[cursor] == ' ') cursor++; if (decoded[cursor] == '\0') break;
+				if (decoded[cursor] == '\n'){
+					cursor++; if (decoded[cursor] == '\0') break;
+					while(decoded[cursor] == ' ') cursor++; if (decoded[cursor] == '\0') break;
+					if (decoded[cursor] == '\n'){
+						cursor++; if (decoded[cursor] == '\0') break;
+						while(decoded[cursor] == ' ') cursor++; if (decoded[cursor] == '\0') break;
+						if (decoded[cursor] == '\n'){
+							break;
+						}
+					}
+				}
+			}
+			if (decoded[cursor] == '\0') break;
+		}
+		else{ 		//find previous
+			cursor--; if(cursor+start<=0) break;
+			prevCursor = cursor;
+			while(decoded[cursor] == ' ') cursor--; if(cursor+start<=0) break;
+			if (decoded[cursor] == '\n'){
+				cursor--; if(cursor+start<=0) break;
+				while(decoded[cursor] == ' ') cursor--; if(cursor+start<=0) break;
+				if (decoded[cursor] == '\n'){
+					cursor--; if(cursor+start<=0) break;
+					while(decoded[cursor] == ' ') cursor--; if(cursor+start<=0) break;
+					if (decoded[cursor] == '\n'){
+						cursor--; if(cursor+start<=0) break;
+						while(decoded[cursor] == ' ') cursor--; if(cursor+start<=0) break;
+						if (decoded[cursor] == '\n'){
+							cursor = prevCursor;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	return cursor;	
+}
+
+void printPage(char *decoded, int cursorBegining, int cursorEnd){
+	char header[] = "[D]->proxima, [A]->anterior, [E]->ultima, [W]->escrever no diario";
+	int startPos = 0, endPos = 0;
+	startPos = cursorBegining; 
+	while(decoded[startPos] == ' ' || decoded[startPos] == '\n') startPos++;
+	endPos = cursorEnd; 
+	while(decoded[endPos] == ' ' || decoded[endPos] == '\n' || decoded[endPos] == '\0') endPos--;
+	system("cls");
+	printf("%s\n\n%.*s\n", header, endPos - startPos + 1, decoded+startPos);
 }
 
 void learq(char *senha)
 {
-	int tamanhosenha = tamanhostr(senha);
-	FILE *arq;
+	int tamanhosenha = strlen(senha);
+	int decodedLength = 0;
+	char c = '\0';
+	
+	FILE *arq = NULL;
 	arq = fopen(NOMEARQ, "r");
-	if (arq == NULL)
+	if (arq == NULL){
 		printf("arquivo inexistente\n");
-
-	// le arquivo
-	int i, poscharsen = -1,contachar=1;
-	char input;
-	do
-	{
-		if (++poscharsen >= tamanhosenha) //garante que o cursor da 
-			poscharsen = 0;//---------------senha se mantenha sobre ela
-		 i = fscanf(arq, "%c", &input);
-		if (i > 0)
-		{ //imprime cada caractere
-		putchar(somachar(input,senha[poscharsen],'+'));
-		}
-		if (!(contachar++%1000)) getchar();
-	}
-	while (i > 0); 
+		return;
+	}	
+	
+	
+	char *decoded = decodeFile(arq, senha); //lembrar de dar free em decoded
 	fclose(arq);
+	decodedLength = strlen(decoded);
+	int cursorBegining = 0;
+	int cursorEnd = findPage(decoded,0, NEXT_PAGE);
+	
+	
+	printPage(decoded, cursorBegining, cursorEnd);
+	
+	while(c != 'w' && c != 'W'){
+		c = _getch();
+		if(c == 'd' || c == 'D'){ //proxima pagina
+			if(cursorEnd < decodedLength){ 
+				cursorBegining += findPage(decoded,cursorBegining, NEXT_PAGE);
+				cursorEnd += findPage(decoded,cursorEnd, NEXT_PAGE);
+				printPage(decoded, cursorBegining, cursorEnd);
+			}
+		}
+		else if(c == 'a' || c == 'A'){ //pagina anterior
+			if(cursorBegining > 0){
+				cursorBegining += findPage(decoded,cursorBegining, PREVIOUS_PAGE);
+				cursorEnd += findPage(decoded,cursorEnd, PREVIOUS_PAGE);
+				printPage(decoded, cursorBegining, cursorEnd);
+			}	
+		}
+		else if(c == 'e' || c == 'E'){ //ultima pagina
+			while(cursorEnd < decodedLength){
+				cursorBegining += findPage(decoded,cursorBegining, NEXT_PAGE);
+				cursorEnd += findPage(decoded,cursorEnd, NEXT_PAGE);
+			}
+			printPage(decoded, cursorBegining, cursorEnd);
+		}
+	}
+	system("cls");
+	free(decoded);
 }
 
 
@@ -96,8 +211,8 @@ int formata(char *texto,int pos){
 	int i=0;
 	
 	while ((LINHAS-i)>0){
-	texto[pos+i]='\n' ;
-	i++;
+		texto[pos+i]='\n' ;
+		i++;
 	}
 
 return(pos+i);
@@ -130,11 +245,18 @@ void escreve(char *senha)
 
 	posicao = formata(texto, posicao);//formata
 
-	pegastr(&texto[posicao]);	// pega texto 
+	int tamanhoInput = 0;
 
-	posicao = tamanhostr(texto); // calcula o tamanho da string pega acima, scanf de merda
-
-	posicao = formata(texto, posicao);//formata
+	do{
+		texto[posicao] = '\n';
+		posicao++;
+		tamanhoInput = posicao;
+		pegastr(&texto[posicao]);	// pega texto 
+		posicao = strlen(texto); // calcula o tamanho da string pega acima, scanf de merda
+		tamanhoInput = posicao - tamanhoInput;
+	}while(tamanhoInput>0);
+	
+	posicao = formata(texto, posicao);
 
 	fix = combina(texto,senha,'-',0);	// combina texto e senha
 
@@ -145,20 +267,17 @@ void escreve(char *senha)
 }
 
 
-char somachar(char a, char b, char op)
-{
+char somachar(char a, char b, char op){
 	int resultado = a;
-	
-
-if (op=='+'){
-		if(a>='a' && a<='z'){ //se a for uma letra minuscula
-			resultado=a+(b-'a'); // soma à senha
-			if (resultado>'z') resultado-='z'-'a'+1; // retira o total de letras caso exceda
-	}
-		else if (a>='A' && a<='Z'){ //se a for uma letra maiuscula
-			resultado=a+(b-'a');
-			if (resultado>'Z') resultado-='z'-'a'+1;
-	}
+	if (op=='+'){
+			if(a>='a' && a<='z'){ //se a for uma letra minuscula
+				resultado=a+(b-'a'); // soma à senha
+				if (resultado>'z') resultado-='z'-'a'+1; // retira o total de letras caso exceda
+		}
+			else if (a>='A' && a<='Z'){ //se a for uma letra maiuscula
+				resultado=a+(b-'a');
+				if (resultado>'Z') resultado-='z'-'a'+1;
+		}
 }
 else if (op=='-'){
 		if(a>='a' && a<='z'){ //se a for uma letra minuscula
@@ -287,7 +406,7 @@ return(pos); //posicao final
 
 int combina(char *texto, char *senha,char operacao, int posicao){
 
-	int tamanhosenha=tamanhostr(senha), poscharsen;
+	int tamanhosenha=strlen(senha), poscharsen;
 
 
 
@@ -303,7 +422,7 @@ return(tamanhosenha - poscharsen); //retorna quanto falta para completar senha
 }
 
 
-void salva(char *texto){
+void salva(char *texto) {
 
 	FILE *arq;
 	arq = fopen(NOMEARQ, "a");
@@ -318,11 +437,6 @@ void salva(char *texto){
 
 }
 
-int tamanhostr(char *str){
-int i=-1;
-while(str[++i]!='\0');
-return(i);
-}
 
 void pergsalva(char *texto) {
 
