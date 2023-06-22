@@ -17,6 +17,7 @@ void learq(char *senha) {
 		return;
 	}
 
+	//#TODO problemas se a senha contiver espaco (nao deveria conter espaco, mas ne)
 	char *decoded = decodeFile(arq, senha);
 	fclose(arq);
 	decodedLength = strlen(decoded);
