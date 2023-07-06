@@ -28,11 +28,8 @@ For example, let's encrypt the phrase "HELLO WORLD" using the key "KEY":
 
 During encryption, only alphabetical characters are encrypted, while non-alphabetical characters remain unchanged in the ciphertext.
 
-Feel free to incorporate this explanation into your program's GitHub README to provide a clear understanding of the Vigenère cipher encryption process.
-
-
 # Usage
-Enter a long passwoord with only letters to create a file (if you haven't already used before) and write your text next. The file will store the text, using the Vigenère's cipher method and the date on a file. when you open the program next time, enter your password and everything you wrote before will be decripted and shown to you above the time and the date. You can navigate through each entry you made in the past.
+Enter a long passwoord with only letters to create a file (if you haven't already used before) and write your text next. To finish writting press Enter twice, and you will be prompted if you want to sabe the file. The file will store the text, using the Vigenère's cipher method and the date on a file. when you open the program next time, enter your password and everything you wrote before will be decripted and shown to you above the time and the date. You can navigate through each entry you made in the past.
 
 ### Navigation
     <A> - View next page
