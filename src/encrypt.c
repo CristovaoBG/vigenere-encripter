@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <conio.h>
+#include <string.h>
 
 // TODO: debugar em relacao a ausencia de texto
 

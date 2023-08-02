@@ -1,5 +1,8 @@
+#include <conio.h>
 #include "decript.h"
 #include "defs.h"
+#include "string.h"
+#include "helpers.h"
 
 int findPage(char *decoded, int start, int flag);
 void printPage(char *decoded, int cursorBegining, int cursorEnd);
@@ -74,7 +77,7 @@ char *decodeFile(FILE *file, char *senha) {
 		else {
 			printf("Erro de leitura\n");
 			rewind(file);
-			return -1;
+			return '\0';
 		}
 	}
 	decoded[i] = '\0';

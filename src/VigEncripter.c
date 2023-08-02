@@ -1,5 +1,6 @@
 #include "decript.h"
 #include "helpers.h"
+#include "encrypt.h"
 #include "defs.h"
 #include <stdio.h>
 #include <stdlib.h>
